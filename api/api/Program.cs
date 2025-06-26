@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
+using Google.Protobuf;
+using System.Text.Json;
 
 namespace api
 {
@@ -63,13 +65,44 @@ namespace api
                     var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
                     Console.WriteLine($"Received: {message}");
 
-                    foreach (var frontendSocket in FrontendSockets)
+                    try
                     {
-                        if (frontendSocket.State == WebSocketState.Open)
+                        using var doc = JsonDocument.Parse(message);
+                        var root = doc.RootElement;
+
+                        var trade = new BinanceTrade
                         {
-                            var msgBytes = Encoding.UTF8.GetBytes(message);
-                            await frontendSocket.SendAsync(new ArraySegment<byte>(msgBytes), WebSocketMessageType.Text, true, CancellationToken.None);
+                            E = root.GetProperty("e").GetString() ?? string.Empty,
+                            Et = root.GetProperty("E").GetInt64(),
+                            S = root.GetProperty("s").GetString() ?? string.Empty,
+                            T = root.GetProperty("t").GetInt64(),
+                            P = root.GetProperty("p").GetString() ?? string.Empty,
+                            Q = root.GetProperty("q").GetString() ?? string.Empty,
+                            Tt = root.GetProperty("T").GetInt64(),
+                            M = root.GetProperty("m").GetBoolean(),
+                            I = root.GetProperty("M").GetBoolean()
+                        };
+
+                        using var ms = new MemoryStream();
+                        trade.WriteTo(ms);
+                        var protoBytes = ms.ToArray();
+
+                        foreach (var frontendSocket in FrontendSockets)
+                        {
+                            if (frontendSocket.State == WebSocketState.Open)
+                            {
+                                await frontendSocket.SendAsync(
+                                    new ArraySegment<byte>(protoBytes),
+                                    WebSocketMessageType.Binary,
+                                    true,
+                                    CancellationToken.None
+                                );
+                            }
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to map JSON to BinanceTrade: {ex.Message}");
                     }
                 }
             }
