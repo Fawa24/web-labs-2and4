@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+message BinanceTrade {
+  string e = 1;   // Event type
+  int64 et = 2;    // Event time
+  string s = 3;   // Symbol
+  int64 t = 4;    // Trade ID
+  string p = 5;   // Price
+  string q = 6;   // Quantity
+  int64 tt = 7;    // Trade time
+  bool m = 8;     // Is the buyer the market maker?
+  bool i = 9;     // Ignore
+}
