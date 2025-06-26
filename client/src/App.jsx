@@ -2,7 +2,7 @@ import './App.css'
 import { useEffect, useState } from 'react'
 
 function App() {
-  const [binanceData, setBinanceData] = useState<string | null>(null)
+  const [binanceData, setBinanceData] = useState()
 
   useEffect(() => {
     const ws = new WebSocket('ws://localhost:5165/ws')
@@ -17,6 +17,8 @@ function App() {
     }
     return () => ws.close()
   }, [])
+
+  console.log(binanceData);
 
   return (
     <>
