@@ -6,7 +6,7 @@ function App() {
   const [binanceData, setBinanceData] = useState()
 
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:5165/ws')
+    const ws = new WebSocket('wss://localhost:5165/ws')
     ws.binaryType = 'arraybuffer'
     ws.onmessage = (event) => {
       const bytes = new Uint8Array(event.data)

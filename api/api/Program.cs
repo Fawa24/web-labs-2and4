@@ -1,7 +1,10 @@
+using Google.Protobuf;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using Google.Protobuf;
 using System.Text.Json;
 
 namespace api
@@ -13,7 +16,22 @@ namespace api
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.WebHost.ConfigureKestrel(serverOptions =>
+            {
+                serverOptions.ListenLocalhost(5165, listenOptions =>
+                {
+                    listenOptions.UseHttps(new HttpsConnectionAdapterOptions
+                    {
+                        SslProtocols = SslProtocols.Tls12,
+                        ServerCertificate = new X509Certificate2("certs/localhost.p12", "changeit")
+                    });
+                });
+            });
+
             var app = builder.Build();
+
+            app.MapGet("info", () => "Koliada Oleh KP-23");
 
             app.UseWebSockets();
             app.Map("/ws", async context =>
